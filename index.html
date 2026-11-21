@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MTH 160 Portfolio Checker</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;line-height:1.4}
+  h2{margin:1.4rem 0 .3rem;font-size:1.05rem}
+  .item{padding:.25rem .5rem;border-left:4px solid #999;margin:.2rem 0;background:#f6f6f6}
+  .pass{border-color:#2e7d32}.fail{border-color:#c62828;background:#fdecea}
+  .detail{font-size:.85rem;color:#444;font-family:monospace;word-break:break-word}
+  #summary{font-weight:600;margin-top:1rem}
+  table{border-collapse:collapse;width:100%;margin:.4rem 0}
+  td,th{border:1px solid #ccc;padding:.25rem .5rem;text-align:left}
+  td.n{text-align:right;white-space:nowrap}
+  tr.ok td:first-child{border-left:4px solid #2e7d32}tr.no td:first-child{border-left:4px solid #c62828}
+  #codebox{width:100%;font-family:monospace;font-size:.9rem;box-sizing:border-box}
+  .note{font-size:.9rem;color:#444}
+</style>
+</head>
+<body>
+<h1>MTH 160 Portfolio Checker <small id="ver" style="font-size:.5em;color:#666"></small></h1>
+<p>Select your .xlsx file. It is checked in your browser and is not uploaded anywhere.
+Each run uses new random test values, so run it again after fixing errors.</p>
+<input type="file" id="f" accept=".xlsx">
+<div id="summary"></div>
+<div id="score"></div>
+<div id="codewrap" hidden>
+  <h2>Your submission code</h2>
+  <p class="note">Paste this code into the Canvas quiz. Run the checker again after any change to your file, and submit the code from your final file.</p>
+  <textarea id="codebox" rows="2" readonly></textarea>
+  <button id="copy" type="button">Copy code</button> <span id="copied" class="note"></span>
+</div>
+<div id="out"></div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hyperformula@3.2.0/dist/hyperformula.full.min.js"></script>
+<script src="checker.js"></script>
+<script>
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+document.getElementById('ver').textContent = 'v' + Checker.VERSION + ' (template v' + Checker.CONFIG.templateVersion + ')';
+document.getElementById('copy').addEventListener('click', () => {
+  const box = document.getElementById('codebox'); box.select();
+  const done = () => { document.getElementById('copied').textContent = 'Copied.'; };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(box.value).then(done, () => { document.execCommand('copy'); done(); });
+  else { document.execCommand('copy'); done(); }
+});
+document.getElementById('f').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0]; if (!file) return;
+  const out = document.getElementById('out'), sum = document.getElementById('summary'), sc = document.getElementById('score');
+  out.textContent = ''; sc.textContent = ''; document.getElementById('codewrap').hidden = true; document.getElementById('copied').textContent = '';
+  sum.textContent = 'Checking...';
+  try {
+    const data = new Uint8Array(await file.arrayBuffer());
+    const seedParam = new URLSearchParams(location.search).get('seed');
+    const res = Checker.run({ XLSX, HyperFormula, data, fileName: file.name, seed: seedParam ? +seedParam : undefined });
+    sum.textContent = res.passed + ' checks passed, ' + res.failed + ' failed (checker v' + res.version + ', test seed ' + res.seed + ')';
+
+    sc.appendChild(el('h2', '', 'Estimated automated points: ' + res.score.core + ' of ' + res.score.max + (res.score.extra ? ', plus ' + res.score.extra + ' extra credit' : '')));
+    const tb = el('table'); const hd = el('tr'); ['Category', 'Points'].forEach((h) => hd.appendChild(el('th', '', h))); tb.appendChild(hd);
+    for (const c of res.score.categories) {
+      const tr = el('tr', c.ok ? 'ok' : 'no'); tr.appendChild(el('td', '', c.label)); tr.appendChild(el('td', 'n', c.earned + ' / ' + c.max));
+      tb.appendChild(tr);
+    }
+    sc.appendChild(tb);
+    sc.appendChild(el('p', 'note', 'A category earns its points only when every check in it passes. Instructions quality, scratchwork, and your reflection are graded separately.'));
+
+    document.getElementById('codebox').value = res.code;
+    document.getElementById('codewrap').hidden = false;
+
+    for (const s of res.sections) {
+      out.appendChild(el('h2', '', s.title));
+      for (const i of s.items) {
+        const d = el('div', 'item ' + (i.ok ? 'pass' : 'fail'), (i.ok ? 'PASS  ' : 'FAIL  ') + i.text);
+        if (!i.ok && i.detail) d.appendChild(el('div', 'detail', i.detail));
+        out.appendChild(d);
+      }
+    }
+  } catch (e) { sum.textContent = 'Could not read this file: ' + e.message; }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MTH 160 Instructor Grader</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;line-height:1.4}
+  fieldset{border:1px solid #ccc;border-radius:6px;margin:.8rem 0;padding:.6rem .9rem}
+  legend{font-weight:600}
+  label{display:block;margin:.5rem 0 .15rem;font-weight:600}
+  .hint{font-size:.85rem;color:#555;font-weight:400}
+  input[type=text],input[type=number]{padding:.3rem;width:16rem}
+  button{padding:.4rem .9rem;margin:.4rem .4rem .4rem 0}
+  #summary{font-weight:600;margin:1rem 0 .4rem}
+  table{border-collapse:collapse;width:100%;font-size:.92rem}
+  th,td{border:1px solid #ccc;padding:.3rem .5rem;text-align:left;vertical-align:top}
+  th{background:#f2f2f2}
+  td.n{text-align:right;white-space:nowrap}
+  tr.row{cursor:pointer}
+  tr.row.flag td:first-child{border-left:4px solid #c62828}
+  tr.row.good td:first-child{border-left:4px solid #2e7d32}
+  .warn{color:#b71c1c;font-weight:600}
+  tr.detail td{background:#fafafa;font-size:.85rem}
+  .detail ul{margin:.2rem 0 .2rem 1.1rem;padding:0}
+  code{font-family:monospace;font-size:.85rem;word-break:break-word}
+  .note{font-size:.9rem;color:#444}
+</style>
+</head>
+<body>
+<h1>MTH 160 Instructor Grader <small id="ver" style="font-size:.5em;color:#666"></small></h1>
+<p class="note">Everything runs in your browser. Student files are read on this computer and are not uploaded anywhere.
+The grading seed and integrity settings are typed in here and are never stored.</p>
+
+<fieldset>
+  <legend>1. Student files</legend>
+  <label for="subs">Canvas submissions .zip, or several .xlsx files <span class="hint">(Canvas file names are handled)</span></label>
+  <input type="file" id="subs" accept=".zip,.xlsx" multiple>
+</fieldset>
+<fieldset>
+  <legend>2. Quiz export (optional)</legend>
+  <label for="csv">Quiz Student Analysis .csv <span class="hint">(verifies each student's submission code)</span></label>
+  <input type="file" id="csv" accept=".csv">
+</fieldset>
+<fieldset>
+  <legend>3. Grading seed</legend>
+  <label for="seed">Any whole number <span class="hint">(students never see it; use the same number if you rerun)</span></label>
+  <input type="number" id="seed" step="1" value="">
+  <details style="margin-top:.6rem"><summary>Integrity settings (optional)</summary>
+    <label for="token">Template marker <span class="hint">(the hidden token in the template; several allowed, separated by commas)</span></label>
+    <input type="text" id="token" autocomplete="off">
+    <label for="trap">Trap word <span class="hint">(the word planted in the hidden AI-trap sentence; several allowed, separated by commas)</span></label>
+    <input type="text" id="trap" autocomplete="off">
+  </details>
+</fieldset>
+<button id="run" type="button">Run grading</button>
+<span id="progress" class="note"></span>
+
+<div id="summary"></div>
+<div id="tools" hidden>
+  <label style="display:inline;font-weight:400"><input type="checkbox" id="onlyflag"> Show only files that need review</label>
+  <button id="dl" type="button">Download CSV</button>
+</div>
+<div id="results"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hyperformula@3.2.0/dist/hyperformula.full.min.js"></script>
+<script src="checker.js"></script>
+<script src="grading.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const tick = () => new Promise((r) => setTimeout(r, 0));
+$('ver').textContent = 'v' + Checker.VERSION + ' (template v' + Checker.CONFIG.templateVersion + ')';
+let graded = [], codes = null, csvText = '';
+
+async function collectFiles(fileList) {
+  const out = [];
+  for (const f of fileList) {
+    if (/\.zip$/i.test(f.name)) {
+      const zip = await JSZip.loadAsync(await f.arrayBuffer());
+      for (const name of Object.keys(zip.files).sort()) {
+        const entry = zip.files[name]; const base = name.split('/').pop();
+        if (entry.dir || !/\.xlsx$/i.test(base) || /^~\$/.test(base) || base[0] === '.' || /(^|\/)__MACOSX\//.test(name)) continue;
+        out.push({ name: base, data: await entry.async('uint8array') });
+      }
+    } else if (/\.xlsx$/i.test(f.name) && !/^~\$/.test(f.name)) {
+      out.push({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) });
+    }
+  }
+  return out.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
+function render() {
+  const only = $('onlyflag').checked, box = $('results'); box.textContent = '';
+  const tb = el('table'), hd = el('tr');
+  ['File', 'Auto score', 'Categories without points', 'Quiz code', 'Integrity'].forEach((h) => hd.appendChild(el('th', '', h)));
+  tb.appendChild(hd);
+  for (const r of graded) {
+    if (only && !r.flagged) continue;
+    const s = r.res.score, tr = el('tr', 'row ' + (r.flagged ? 'flag' : 'good'));
+    tr.appendChild(el('td', '', r.fileName));
+    tr.appendChild(el('td', 'n', s.core + ' / ' + s.max + (s.extra ? ' + ' + s.extra + ' EC' : '')));
+    tr.appendChild(el('td', '', r.missed.join('; ') || 'none'));
+    tr.appendChild(el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status));
+    const integ = r.ig.marker === 'n/a' && !r.ig.trap.length ? 'n/a' : 'marker ' + r.ig.marker + (r.ig.trap.length ? '; trap word at ' + r.ig.trap.join(', ') : '');
+    tr.appendChild(el('td', ['OK', 'n/a'].includes(r.ig.marker) && !r.ig.trap.length ? '' : 'warn', integ));
+    const dt = el('tr', 'detail'); dt.hidden = true;
+    const td = el('td'); td.colSpan = 5;
+    td.appendChild(el('div', '', 'Code in quiz: ' + (r.claimed === '' ? 'none or invalid' : r.claimed + ' points')));
+    if (r.fails.length) { const ul = el('ul'); r.fails.forEach((f) => ul.appendChild(el('li', '', f))); td.appendChild(ul); }
+    else td.appendChild(el('div', '', 'All checks passed.'));
+    dt.appendChild(td);
+    tr.addEventListener('click', () => { dt.hidden = !dt.hidden; });
+    tb.appendChild(tr); tb.appendChild(dt);
+  }
+  box.appendChild(tb);
+}
+
+$('onlyflag').addEventListener('change', render);
+$('dl').addEventListener('click', () => {
+  const blob = new Blob(['﻿' + csvText], { type: 'text/csv' });
+  const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'mth160_grades_v' + Checker.VERSION + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+$('run').addEventListener('click', async () => {
+  const sum = $('summary'), prog = $('progress');
+  $('tools').hidden = true; $('results').textContent = ''; sum.textContent = '';
+  if (!$('subs').files.length) { sum.textContent = 'Choose the student files first.'; return; }
+  if ($('seed').value.trim() === '' || !Number.isInteger(+$('seed').value)) { sum.textContent = 'Enter a whole number as the grading seed.'; return; }
+  const seed = +$('seed').value, token = $('token').value.trim(), trap = $('trap').value.trim();
+  $('run').disabled = true;
+  try {
+    prog.textContent = 'Reading files...'; await tick();
+    const files = await collectFiles($('subs').files);
+    if (!files.length) { sum.textContent = 'No .xlsx files were found.'; return; }
+    codes = null;
+    if ($('csv').files.length) codes = Grading.parseCodes(Checker, await $('csv').files[0].text());
+    graded = [];
+    for (let i = 0; i < files.length; i++) {
+      prog.textContent = 'Grading ' + (i + 1) + ' of ' + files.length + ': ' + files[i].name; await tick();
+      try { graded.push(Grading.gradeOne({ XLSX, HyperFormula, Checker, fileName: files[i].name, data: files[i].data, seed, codes, token, trap })); }
+      catch (e) { sum.textContent = 'Could not read ' + files[i].name + ': ' + e.message; throw e; }
+    }
+    const lines = [Grading.csvHeader(), ...graded.map(Grading.csvRow), ...Grading.orphanRows(codes)];
+    csvText = lines.join('\n') + '\n';
+    const mean = graded.reduce((a, r) => a + r.res.score.core, 0) / graded.length;
+    const flagged = graded.filter((r) => r.flagged).length;
+    sum.textContent = graded.length + ' files graded. Mean automated score ' + mean.toFixed(1) + ' of ' + graded[0].res.score.max + ' (extra credit not included). ' + flagged + ' need review.' +
+      (codes ? ' Quiz rows: ' + codes.length + ', without a code: ' + Grading.noCodeCount(codes) + ', codes with no file: ' + codes.filter((e) => !e.used && e.code).length + '.' : '');
+    prog.textContent = '';
+    $('tools').hidden = false; render();
+  } catch (e) { if (!sum.textContent) sum.textContent = 'Something went wrong: ' + e.message; prog.textContent = ''; }
+  finally { $('run').disabled = false; }
+});
+</script>
+</body>
+</html>

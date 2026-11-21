@@ -1,0 +1,7 @@
+# Never publish these
+integrity.local.json
+node_modules/
+submissions/
+*.xlsx
+*.csv
+*.zip
