@@ -29,7 +29,7 @@ Reflection, scratchwork, and the spreadsheet upload are graded in Canvas.
 
 ## Submission code
 After a check, the page shows a code such as
-`MTH160|1.2.3|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
+`MTH160|1.2.4|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
 (version, student, pass flags by category, points, test seed, file fingerprint, checksum).
 Students paste it into the Canvas quiz. It is not tamper-proof (the checker runs in the browser), so the
 instructor tools recompute everything from the uploaded file.
@@ -48,7 +48,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.2.3** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.2.4** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 

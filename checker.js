@@ -4,7 +4,7 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.2.3';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.2.4';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {

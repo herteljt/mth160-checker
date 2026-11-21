@@ -6,10 +6,11 @@
 <title>MTH 160 Portfolio Checker</title>
 <style>
   body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;line-height:1.4}
-  h2{margin:1.4rem 0 .3rem;font-size:1.05rem}
-  .item{padding:.25rem .5rem;border-left:4px solid #999;margin:.2rem 0;background:#f6f6f6}
+  h2{margin:1.6rem 0 .4rem;font-size:1.15rem}
+  .item{padding:.35rem .6rem;border-left:4px solid #999;margin:.25rem 0;background:#f6f6f6}
   .pass{border-color:#2e7d32}.fail{border-color:#c62828;background:#fdecea}
-  .detail{font-size:.85rem;color:#444;font-family:monospace;word-break:break-word}
+  .detail{font-size:.85rem;color:#444;font-family:monospace;word-break:break-word;margin-top:.15rem}
+  .grp{font-weight:600;font-size:.95rem;margin:.9rem 0 .2rem;color:#333}
   #summary{font-weight:600;margin-top:1rem}
   table{border-collapse:collapse;width:100%;margin:.4rem 0}
   td,th{border:1px solid #ccc;padding:.25rem .5rem;text-align:left}
@@ -17,6 +18,19 @@
   tr.ok td:first-child{border-left:4px solid #2e7d32}tr.no td:first-child{border-left:4px solid #c62828}
   #codebox{width:100%;font-family:monospace;font-size:.9rem;box-sizing:border-box}
   .note{font-size:.9rem;color:#444}
+  .scorebox{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin:1rem 0 .4rem}
+  .donut{width:150px;height:150px;flex:none}
+  .scorebox>div{flex:1 1 16rem;min-width:0}
+  .scorebox h2{margin-top:0}
+  .donut text{font-family:system-ui,sans-serif;text-anchor:middle}
+  .legend span{display:inline-block;width:.8rem;height:.8rem;margin-right:.4rem;vertical-align:-1px}
+  .legend div{margin:.15rem 0}
+  details.sec{margin:1rem 0}
+  details.sec>summary{cursor:pointer;font-weight:600;font-size:1.15rem}
+  details.more{margin:.6rem 0}
+  details.more>summary{cursor:pointer;font-weight:600}
+  .fixhead{color:#b71c1c}.workhead{color:#1b5e20}
+  .allgood{padding:.5rem .7rem;border-left:4px solid #2e7d32;background:#eef7ee}
 </style>
 </head>
 <body>
@@ -26,29 +40,48 @@ Each run uses new random test values, so run it again after fixing errors.</p>
 <input type="file" id="f" accept=".xlsx">
 <div id="summary"></div>
 <div id="score"></div>
+<div id="fix"></div>
+<div id="works"></div>
 <div id="codewrap" hidden>
   <h2>Your submission code</h2>
   <p class="note">Paste this code into the Canvas quiz. Run the checker again after any change to your file, and submit the code from your final file.</p>
   <textarea id="codebox" rows="2" readonly></textarea>
   <button id="copy" type="button">Copy code</button> <span id="copied" class="note"></span>
 </div>
-<div id="out"></div>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hyperformula@3.2.0/dist/hyperformula.full.min.js"></script>
 <script src="checker.js"></script>
 <script>
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-document.getElementById('ver').textContent = 'v' + Checker.VERSION + ' (template v' + Checker.CONFIG.templateVersion + ')';
-document.getElementById('copy').addEventListener('click', () => {
-  const box = document.getElementById('codebox'); box.select();
-  const done = () => { document.getElementById('copied').textContent = 'Copied.'; };
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + Checker.VERSION + ' (template v' + Checker.CONFIG.templateVersion + ')';
+$('copy').addEventListener('click', () => {
+  const box = $('codebox'); box.select();
+  const done = () => { $('copied').textContent = 'Copied.'; };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(box.value).then(done, () => { document.execCommand('copy'); done(); });
   else { document.execCommand('copy'); done(); }
 });
-document.getElementById('f').addEventListener('change', async (ev) => {
+
+// Donut chart of points earned vs. points not earned (core points only; extra credit is shown in text).
+function donut(earned, max) {
+  const NS = 'http://www.w3.org/2000/svg', R = 54, C = 2 * Math.PI * R;
+  const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const svg = mk('svg', { viewBox: '0 0 150 150', class: 'donut', role: 'img', 'aria-label': earned + ' of ' + max + ' automated points earned' });
+  svg.appendChild(mk('circle', { cx: 75, cy: 75, r: R, fill: 'none', stroke: '#c62828', 'stroke-width': 18 }));
+  const frac = max ? earned / max : 0;
+  if (frac > 0) svg.appendChild(mk('circle', { cx: 75, cy: 75, r: R, fill: 'none', stroke: '#2e7d32', 'stroke-width': 18,
+    'stroke-dasharray': (frac * C) + ' ' + C, transform: 'rotate(-90 75 75)' }));
+  const t1 = mk('text', { x: 75, y: 76, 'font-size': 19, 'font-weight': 700, fill: '#222' }); t1.textContent = earned + ' / ' + max;
+  const t2 = mk('text', { x: 75, y: 95, 'font-size': 11, fill: '#555' }); t2.textContent = 'points';
+  svg.appendChild(t1); svg.appendChild(t2);
+  return svg;
+}
+
+$('f').addEventListener('change', async (ev) => {
   const file = ev.target.files[0]; if (!file) return;
-  const out = document.getElementById('out'), sum = document.getElementById('summary'), sc = document.getElementById('score');
-  out.textContent = ''; sc.textContent = ''; document.getElementById('codewrap').hidden = true; document.getElementById('copied').textContent = '';
+  const sum = $('summary'), sc = $('score'), fix = $('fix'), works = $('works');
+  for (const n of [sc, fix, works]) n.textContent = '';
+  $('codewrap').hidden = true; $('copied').textContent = '';
   sum.textContent = 'Checking...';
   try {
     const data = new Uint8Array(await file.arrayBuffer());
@@ -56,26 +89,63 @@ document.getElementById('f').addEventListener('change', async (ev) => {
     const res = Checker.run({ XLSX, HyperFormula, data, fileName: file.name, seed: seedParam ? +seedParam : undefined });
     sum.textContent = res.passed + ' checks passed, ' + res.failed + ' failed (checker v' + res.version + ', test seed ' + res.seed + ')';
 
-    sc.appendChild(el('h2', '', 'Estimated automated points: ' + res.score.core + ' of ' + res.score.max + (res.score.extra ? ', plus ' + res.score.extra + ' extra credit' : '')));
+    // Score: donut + legend + collapsed detailed breakdown
+    const box = el('div', 'scorebox');
+    box.appendChild(donut(res.score.core, res.score.max));
+    const side = el('div'); 
+    side.appendChild(el('h2', '', 'Estimated automated points: ' + res.score.core + ' of ' + res.score.max));
+    if (res.score.extra) side.appendChild(el('div', '', '+ ' + res.score.extra + ' extra credit'));
+    const lg = el('div', 'legend');
+    const a = el('div'), b = el('div');
+    const s1 = el('span'); s1.style.background = '#2e7d32'; a.appendChild(s1); a.appendChild(document.createTextNode('Points earned: ' + res.score.core));
+    const s2 = el('span'); s2.style.background = '#c62828'; b.appendChild(s2); b.appendChild(document.createTextNode('Points not yet earned: ' + (res.score.max - res.score.core)));
+    lg.appendChild(a); lg.appendChild(b); side.appendChild(lg);
+    side.appendChild(el('p', 'note', 'A category earns its points only when every check in it passes. Instructions quality, scratchwork, and your reflection are graded separately.'));
+    box.appendChild(side);
+    sc.appendChild(box);
+
+    const more = el('details', 'more'); more.appendChild(el('summary', '', 'Show detailed breakdown by category'));
     const tb = el('table'); const hd = el('tr'); ['Category', 'Points'].forEach((h) => hd.appendChild(el('th', '', h))); tb.appendChild(hd);
     for (const c of res.score.categories) {
       const tr = el('tr', c.ok ? 'ok' : 'no'); tr.appendChild(el('td', '', c.label)); tr.appendChild(el('td', 'n', c.earned + ' / ' + c.max));
       tb.appendChild(tr);
     }
-    sc.appendChild(tb);
-    sc.appendChild(el('p', 'note', 'A category earns its points only when every check in it passes. Instructions quality, scratchwork, and your reflection are graded separately.'));
+    more.appendChild(tb); sc.appendChild(more);
 
-    document.getElementById('codebox').value = res.code;
-    document.getElementById('codewrap').hidden = false;
-
+    // Split every check into "to fix" and "works", keeping the section it came from.
+    const bad = [], good = [];
     for (const s of res.sections) {
-      out.appendChild(el('h2', '', s.title));
-      for (const i of s.items) {
-        const d = el('div', 'item ' + (i.ok ? 'pass' : 'fail'), (i.ok ? 'PASS  ' : 'FAIL  ') + i.text);
-        if (!i.ok && i.detail) d.appendChild(el('div', 'detail', i.detail));
-        out.appendChild(d);
-      }
+      const f = s.items.filter((i) => !i.ok), p = s.items.filter((i) => i.ok);
+      if (f.length) bad.push({ title: s.title, items: f });
+      if (p.length) good.push({ title: s.title, items: p });
     }
+    const countItems = (g) => g.reduce((n, s) => n + s.items.length, 0);
+    const fill = (parent, groups, ok) => {
+      for (const s of groups) {
+        parent.appendChild(el('div', 'grp', s.title));
+        for (const i of s.items) {
+          const d = el('div', 'item ' + (ok ? 'pass' : 'fail'), i.text);
+          if (!ok && i.detail) d.appendChild(el('div', 'detail', i.detail));
+          parent.appendChild(d);
+        }
+      }
+    };
+
+    fix.appendChild(el('h2', 'fixhead', 'Things to fix (' + countItems(bad) + ')'));
+    if (bad.length) {
+      fix.appendChild(el('p', 'note', 'Fix these, save the file, and run the checker again. Test values change on every run.'));
+      fill(fix, bad, false);
+    } else {
+      fix.appendChild(el('div', 'allgood', 'Nothing to fix. Every automated check passed.'));
+    }
+
+    const w = el('details', 'sec');
+    w.appendChild(el('summary', 'workhead', 'Works (' + countItems(good) + ')'));
+    fill(w, good, true);
+    works.appendChild(w);
+
+    $('codebox').value = res.code;
+    $('codewrap').hidden = false;
   } catch (e) { sum.textContent = 'Could not read this file: ' + e.message; }
 });
 </script>
