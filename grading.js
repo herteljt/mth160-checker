@@ -7,7 +7,7 @@
 
   const KEYS = ['layout', 'ops', 'instr', 'values', 'Simple Interest', 'Compound Interest', 'Continuous Compounded Interest', 'Future Value', 'Present Value', 'Income Tax Estimator', 'APY Calculator', 'Extra Credit - GPA Estimator'];
   const COLS = ['layout', 'ops', 'instr', 'values', 'SI', 'CI', 'CC', 'FV', 'PV', 'tax', 'apy', 'ec'];
-  const HEADER = ['file', 'student_id', 'auto_score', 'max', ...COLS, 'failed_checks', 'code_status', 'claimed_score', 'marker', 'trap_word', 'checker_version', 'template_version', 'failures'];
+  const HEADER = ['file', 'student_id', 'auto_score', 'max', ...COLS, 'failed_checks', 'code_status', 'code_source', 'claimed_score', 'marker', 'trap_word', 'checker_version', 'template_version', 'failures'];
 
   const q = (s) => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
 
@@ -76,36 +76,42 @@
     const orig = originalName(fileName);
     const res = Checker.run({ XLSX, HyperFormula, data, fileName: orig.name, seed });
     const ig = integrity(XLSX, data, { token, trap });
-    let status = 'n/a', claimed = '';
+    // The submission code is read from the spreadsheet itself. A code from the quiz export is used only when the file has none.
+    const san = (t) => String(t).replace(/\.xlsx$/i, '').replace(/[^A-Za-z_'\-]/g, '').toLowerCase();
+    const stem = san(orig.name);
+    let entry = null;
     if (codes) {
-      const stem = orig.name.replace(/\.xlsx$/i, '').toLowerCase();
-      const entry = codes.find((e) => orig.userId && e.id === orig.userId) || codes.find((e) => e.code && e.code.student.toLowerCase() === stem);
+      entry = codes.find((e) => orig.userId && e.id === orig.userId) || codes.find((e) => e.code && san(e.code.student) === stem) || null;
       if (entry) entry.used = true;
-      const c = entry && entry.code;
-      if (!c) status = 'NO_CODE';
-      else if (!c.valid) status = 'BAD_CHECKSUM';
-      else {
-        claimed = c.points;
-        const again = Checker.run({ XLSX, HyperFormula, data, fileName: orig.name, seed: c.seed });
-        if (again.fingerprint !== c.fp) status = 'FILE_CHANGED';
-        else if (again.flags !== c.flags || again.score.total !== c.points) status = 'CLAIM_MISMATCH';
-        else status = res.flags === c.flags ? 'OK' : 'OK_GRADING_SEED_DIFFERS';
-      }
+    }
+    const fileCode = res.codeInFile ? res.codeInFile.parsed : null;
+    const c = fileCode || (entry && entry.code) || null;
+    const source = fileCode ? 'file' : c ? 'quiz' : '';
+    let status, claimed = '';
+    if (!c) status = 'NO_CODE';
+    else if (!c.valid) status = 'BAD_CHECKSUM';
+    else {
+      claimed = c.points;
+      const again = Checker.run({ XLSX, HyperFormula, data, fileName: orig.name, seed: c.seed });
+      if (again.fingerprint !== c.fp) status = 'FILE_CHANGED';
+      else if (again.flags !== c.flags || again.score.total !== c.points) status = 'CLAIM_MISMATCH';
+      else if (san(c.student) !== stem) status = 'NAME_MISMATCH';
+      else status = res.flags === c.flags ? 'OK' : 'OK_GRADING_SEED_DIFFERS';
     }
     const fails = res.sections.flatMap((s) => s.items.filter((i) => !i.ok).map((i) => s.title + ' - ' + i.text));
     const missed = res.score.categories.filter((c) => !c.ok && !c.extra).map((c) => c.label);
     const flagged = missed.length > 0 || !['n/a', 'OK'].includes(status) || ['ALTERED', 'MISSING'].includes(ig.marker) || ig.trap.length > 0;
-    return { fileName, orig, res, ig, status, claimed, fails, missed, flagged };
+    return { fileName, orig, res, ig, status, source, claimed, fails, missed, flagged };
   }
 
   const csvHeader = () => HEADER.join(',');
   function csvRow(r) {
     const earned = Object.fromEntries(r.res.score.categories.map((c) => [c.key, c.earned]));
-    return [q(r.fileName.split(/[\\/]/).pop()), r.orig.userId || '', r.res.score.total, r.res.score.max, ...KEYS.map((k) => earned[k]), r.res.failed, r.status, r.claimed,
+    return [q(r.fileName.split(/[\\/]/).pop()), r.orig.userId || '', r.res.score.total, r.res.score.max, ...KEYS.map((k) => earned[k]), r.res.failed, r.status, r.source, r.claimed,
       r.ig.marker, q(r.ig.trap.join(' ')), r.res.version, r.res.templateVersion || 'none', q(r.fails.join(' | '))].join(',');
   }
   const orphanRows = (codes) => (codes || []).filter((e) => !e.used && e.code)
-    .map((e) => [q('(no file found)'), e.id || '', '', '', ...COLS.map(() => ''), '', 'CODE_NO_FILE', e.code.points, '', '', '', '', '', q(e.code.student)].join(','));
+    .map((e) => [q('(no file found)'), e.id || '', '', '', ...COLS.map(() => ''), '', 'CODE_NO_FILE', 'quiz', e.code.points, '', '', '', '', q(e.code.student)].join(','));
   const noCodeCount = (codes) => (codes || []).filter((e) => !e.code && (e.id || e.name)).length;
 
   return { KEYS, COLS, HEADER, parseCsv, originalName, parseCodes, integrity, gradeOne, csvHeader, csvRow, orphanRows, noCodeCount };

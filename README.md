@@ -1,7 +1,7 @@
 # MTH 160 Portfolio Checker
 
 Students open the GitHub Pages URL, select their .xlsx file, and get a pass/fail report, an estimate of
-their automated points, and a submission code to paste into the Canvas quiz.
+their automated points, and a submission code. The student pastes the code into a cell of their own spreadsheet (Simple Interest, J9) and submits that file.
 The file is processed in the browser and never uploaded.
 
 ## Deploy
@@ -27,17 +27,18 @@ Points are set in `CONFIG.points` in `checker.js`. A category earns its points o
 
 Reflection, scratchwork, and the spreadsheet upload are graded in Canvas.
 
+Code status values: `OK`, `OK_GRADING_SEED_DIFFERS`, `FILE_CHANGED`, `CLAIM_MISMATCH`, `NAME_MISMATCH`, `BAD_CHECKSUM`, `NO_CODE`, `CODE_NO_FILE`. A status other than `OK` is a reason to look at the submission, not a finding of misconduct.
+
 ## Submission code
 After a check, the page shows a code such as
-`MTH160|1.2.4|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
+`MTH160|1.3.0|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
 (version, student, pass flags by category, points, test seed, file fingerprint, checksum).
-Students paste it into the Canvas quiz. It is not tamper-proof (the checker runs in the browser), so the
-instructor tools recompute everything from the uploaded file.
+Students paste it into cell J9 of the Simple Interest tab, save the file under the same name, and submit it. The instructor tools read the code out of each spreadsheet, so no quiz export is needed. The code cell is left out of the file fingerprint, so pasting the code does not change it, but any later change to the work does. The code is not tamper-proof (the checker runs in the browser), so the instructor tools recompute everything from the uploaded file.
 
 ## Grade a class online (instructor page)
 Open `https://<username>.github.io/<repo>/grader.html`.
 1. Choose the Canvas submissions .zip (or several .xlsx files). Nested folders, `__MACOSX` entries, and `~$` lock files are skipped.
-2. Optional: choose the quiz Student Analysis .csv to verify submission codes.
+2. Optional: choose the quiz Student Analysis .csv. It is used only for files that contain no code of their own.
 3. Enter a grading seed (any whole number you keep private).
 4. Click Run grading. The table shows each student's automated score, the categories without points, and the code status. Click a row for the failed checks. Use "Show only files that need review" to focus, and Download CSV for the full results.
 Files are read and graded in your browser and are not uploaded.
@@ -48,7 +49,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.2.4** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.3.0** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 

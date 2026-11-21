@@ -39,8 +39,8 @@ The grading seed and integrity settings are typed in here and are never stored.<
   <input type="file" id="subs" accept=".zip,.xlsx" multiple>
 </fieldset>
 <fieldset>
-  <legend>2. Quiz export (optional)</legend>
-  <label for="csv">Quiz Student Analysis .csv <span class="hint">(verifies each student's submission code)</span></label>
+  <legend>2. Quiz export (optional, only for files with no code inside)</legend>
+  <label for="csv">Quiz Student Analysis .csv <span class="hint">(submission codes are read from the spreadsheets; this is a backup for students who put the code only in the quiz)</span></label>
   <input type="file" id="csv" accept=".csv">
 </fieldset>
 <fieldset>
@@ -96,7 +96,7 @@ async function collectFiles(fileList) {
 function render() {
   const only = $('onlyflag').checked, box = $('results'); box.textContent = '';
   const tb = el('table'), hd = el('tr');
-  ['File', 'Auto score', 'Categories without points', 'Quiz code', 'Integrity'].forEach((h) => hd.appendChild(el('th', '', h)));
+  ['File', 'Auto score', 'Categories without points', 'Code', 'Integrity'].forEach((h) => hd.appendChild(el('th', '', h)));
   tb.appendChild(hd);
   for (const r of graded) {
     if (only && !r.flagged) continue;
@@ -104,12 +104,12 @@ function render() {
     tr.appendChild(el('td', '', r.fileName));
     tr.appendChild(el('td', 'n', s.core + ' / ' + s.max + (s.extra ? ' + ' + s.extra + ' EC' : '')));
     tr.appendChild(el('td', '', r.missed.join('; ') || 'none'));
-    tr.appendChild(el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status));
+    tr.appendChild(el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status + (r.source ? ' (' + r.source + ')' : '')));
     const integ = r.ig.marker === 'n/a' && !r.ig.trap.length ? 'n/a' : 'marker ' + r.ig.marker + (r.ig.trap.length ? '; trap word at ' + r.ig.trap.join(', ') : '');
     tr.appendChild(el('td', ['OK', 'n/a'].includes(r.ig.marker) && !r.ig.trap.length ? '' : 'warn', integ));
     const dt = el('tr', 'detail'); dt.hidden = true;
     const td = el('td'); td.colSpan = 5;
-    td.appendChild(el('div', '', 'Code in quiz: ' + (r.claimed === '' ? 'none or invalid' : r.claimed + ' points')));
+    td.appendChild(el('div', '', 'Submission code' + (r.source ? ' (found in ' + (r.source === 'file' ? 'the spreadsheet' : 'the quiz export') + ')' : '') + ': ' + (r.claimed === '' ? 'none or invalid' : r.claimed + ' points claimed')));
     if (r.fails.length) { const ul = el('ul'); r.fails.forEach((f) => ul.appendChild(el('li', '', f))); td.appendChild(ul); }
     else td.appendChild(el('div', '', 'All checks passed.'));
     dt.appendChild(td);

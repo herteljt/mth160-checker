@@ -4,6 +4,14 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.3.0 (Fall 2026)
+- The submission code now travels inside the spreadsheet. Students paste it into Simple Interest!J9 and submit the file. The grader and `cli.js` read the code from each file; the quiz export is optional and is used only for files with no code of their own.
+- The file fingerprint ignores the cell that holds the code, so pasting the code does not change it, while any later edit to the work still does (`FILE_CHANGED`). Fingerprints of files without a code are unchanged.
+- New status `NAME_MISMATCH` (a valid code issued under another name, such as a copied file). New CSV column `code_source`. A file with no code is now `NO_CODE` even when no quiz export is loaded.
+- Student page tells the student whether the file already holds a code, and whether it is current.
+- Template 1.0.2: labeled code cell (J8 and J9); rate cells display as 4.50% instead of 5%; the Payment cells on Future Value and Present Value (B21) no longer show as percentages. No change to tested cells. Template 1.0.0 and 1.0.1 files still pass the version check.
+- Fixed an extra empty column in the `CODE_NO_FILE` rows of the CSV.
+
 ## 1.2.4 (Fall 2026)
 - Student checker page redesigned: a donut chart of the score, a "Things to fix" list shown first, a collapsed "Works" list, and a collapsed detailed breakdown by category.
 - No change to scoring, test values, or the template.

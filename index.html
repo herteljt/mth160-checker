@@ -44,7 +44,8 @@ Each run uses new random test values, so run it again after fixing errors.</p>
 <div id="works"></div>
 <div id="codewrap" hidden>
   <h2>Your submission code</h2>
-  <p class="note">Paste this code into the Canvas quiz. Run the checker again after any change to your file, and submit the code from your final file.</p>
+  <p class="note">Paste this code into cell J9 of the Simple Interest tab in your spreadsheet (the shaded cell under "Submission code"), save the file with the same name, and submit that file. Run the checker again after any later change to your work and paste the new code. If your Canvas quiz also asks for the code, paste it there too.</p>
+  <div id="codestate" class="note"></div>
   <textarea id="codebox" rows="2" readonly></textarea>
   <button id="copy" type="button">Copy code</button> <span id="copied" class="note"></span>
 </div>
@@ -145,6 +146,10 @@ $('f').addEventListener('change', async (ev) => {
     works.appendChild(w);
 
     $('codebox').value = res.code;
+    const cs = $('codestate'); cs.textContent = ''; cs.style.fontWeight = '600';
+    if (!res.codeInFile) cs.textContent = 'No submission code was found in this file yet.';
+    else if (res.codeInFile.current) cs.textContent = 'This file already contains a matching code (' + res.codeInFile.where + '). You are ready to submit.';
+    else cs.textContent = 'This file contains a code in ' + res.codeInFile.where + ' that does not match your current work. Replace it with the code above.';
     $('codewrap').hidden = false;
   } catch (e) { sum.textContent = 'Could not read this file: ' + e.message; }
 });

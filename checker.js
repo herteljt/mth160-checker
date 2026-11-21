@@ -4,11 +4,11 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.2.4';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.3.0';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
-    templateVersion: '1.0.1',       // current student template. Only major.minor must match
+    templateVersion: '1.0.2',       // current student template. Only major.minor must match
     filePattern: /^[A-Za-z][A-Za-z'\-]*_[A-Za-z][A-Za-z'\-]*\.xlsx$/, // First_Last.xlsx
     allowedFunctions: ['IF', 'AND', 'OR', 'LN', 'EXP'],               // everything else is flagged
     // Extra functions allowed only in specific places (template already uses SUM here)
@@ -165,6 +165,7 @@
       const ws = wb.Sheets[name]; if (!ws) continue;
       for (const addr of Object.keys(ws).filter((k) => k[0] !== '!').sort()) {
         const c = ws[addr];
+        if (typeof c.v === 'string' && c.v.indexOf('MTH160|') >= 0 && !c.f) continue; // the pasted submission code is not part of the work
         const v = c.f ? '=' + c.f : (c.v === undefined || c.v === null ? '' : String(c.v));
         if (v !== '') parts.push(name + '!' + addr + '=' + v);
       }
@@ -180,6 +181,23 @@
     const full = m[0], i = full.lastIndexOf('|K'), body = full.slice(0, i), f = body.split('|');
     return { raw: full, valid: checksum(body) === full.slice(i + 2), version: f[1], student: f[2],
       flags: f.slice(3, 8).join('|'), points: +f[8].slice(1), seed: +f[9].slice(1), fp: f[10].slice(1) };
+  }
+
+  // Find a submission code pasted into any cell of the workbook. Prefers a code with a valid checksum.
+  function findCode(wb) {
+    let first = null;
+    for (const name of wb.SheetNames) {
+      const ws = wb.Sheets[name];
+      for (const addr of Object.keys(ws).filter((k) => k[0] !== '!').sort()) {
+        const c = ws[addr];
+        if (typeof c.v !== 'string' || c.v.indexOf('MTH160|') < 0) continue;
+        const p = parseCode(c.v); if (!p) continue;
+        const hit = { sheet: name, addr, parsed: p };
+        if (p.valid) return hit;
+        if (!first) first = hit;
+      }
+    }
+    return first;
   }
 
   function readTemplateVersion(wb) {
@@ -349,9 +367,12 @@
     const body = 'MTH160|' + VERSION + '|' + who + '|' + flags + '|P' + score.total + '|S' + seed + '|F' + fp;
     const code = body + '|K' + checksum(body);
 
+    const found = findCode(wb);
+    const codeInFile = found ? { where: found.sheet + '!' + found.addr, parsed: found.parsed, current: found.parsed.valid && found.parsed.fp === fp } : null;
+
     const all = sections.flatMap((s) => s.items);
-    return { version: VERSION, templateVersion: tv, score, flags, fingerprint: fp, code, seed, sections, passed: all.filter((i) => i.ok).length, failed: all.filter((i) => !i.ok).length };
+    return { version: VERSION, templateVersion: tv, score, flags, fingerprint: fp, code, codeInFile, seed, sections, passed: all.filter((i) => i.ok).length, failed: all.filter((i) => !i.ok).length };
   }
 
-  return { run, CONFIG, VERSION, parseCode, checksum };
+  return { run, CONFIG, VERSION, parseCode, checksum, findCode };
 });
