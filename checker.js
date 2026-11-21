@@ -4,7 +4,7 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.2.2';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.2.3';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
@@ -85,7 +85,7 @@
     }
     // Compound interest
     {
-      const P = between(1000, 20000, 500), r = between(0.02, 0.09, 0.005), n = pick([1, 2, 4, 12]), t = between(1, 20, 1);
+      const P = between(1000, 20000, 500), r = between(0.02, 0.09, 0.005), n = pick([2, 4, 12]), t = between(1, 20, 1);
       const A = P * Math.pow(1 + r / n, n * t);
       add(CI, 'Case 1 (find A)', { B5: P, B6: r, B7: n, B8: t }, one('B4', A));
       add(CI, 'Case 2 (find P)', { B12: A, B14: r, B15: n, B16: t }, one('B13', P));
@@ -102,7 +102,7 @@
     }
     // Annuities (ordinary annuity, payment at the end of each compounding period)
     {
-      const pmt = between(50, 1000, 50), r = between(0.02, 0.09, 0.005), m = pick([1, 2, 4, 12]), t = between(2, 20, 1);
+      const pmt = between(50, 1000, 50), r = between(0.02, 0.09, 0.005), m = pick([2, 4, 12]), t = between(2, 20, 1);
       const i = r / m;
       const fv = pmt * (Math.pow(1 + i, m * t) - 1) / i;
       const pv = pmt * (1 - Math.pow(1 + i, -m * t)) / i;

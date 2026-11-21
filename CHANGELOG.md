@@ -4,6 +4,10 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.2.3 (Fall 2026)
+- Find-the-time tests for Compound Interest, Future Value, and Present Value no longer draw 1 compounding period per year. With n = 1 a formula that left n out of the answer gave the right number by coincidence and passed.
+- No change to scoring, test values, or the template.
+
 ## 1.2.2 (Fall 2026)
 - Release reorganized into separate folders for published files, instructor-only tools, and the student template.
 - No change to scoring or to what students see.
