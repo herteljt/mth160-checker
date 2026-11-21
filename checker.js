@@ -4,11 +4,15 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.3.1';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.4.0';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
-    templateVersion: '1.0.2',       // current student template. Only major.minor must match
+    templateVersion: '1.1.0',       // current student template. Only major.minor must match
+    cover: {                          // the Submission Info tab (first tab of the template)
+      sheet: 'Submission Info', name: 'B6', people: 'B7', minutes: 'B8', ai: 'B9', aiHow: 'B10', sources: 'B11', unfinished: 'B12',
+      reflection: 'A16', signature: 'B22', date: 'B23', code: 'B27', reflectionWords: [200, 250]
+    },
     filePattern: /^[A-Za-z][A-Za-z'\-]*_[A-Za-z][A-Za-z'\-]*\.xlsx$/, // First_Last.xlsx
     allowedFunctions: ['IF', 'AND', 'OR', 'LN', 'EXP'],               // everything else is flagged
     // Extra functions allowed only in specific places (template already uses SUM here)
@@ -54,6 +58,7 @@
     TAX = 'Income Tax Estimator', GPA = 'Extra Credit - GPA Estimator';
   const REQUIRED = [SI, CI, CC, FV, PV, APY, TAX];
   const OPTIONAL = [GPA];
+  const COVER = () => CONFIG.cover.sheet;
 
   function makeRng(seed) {
     let a = seed >>> 0;
@@ -200,6 +205,21 @@
     return first;
   }
 
+  // Read the Submission Info tab. Missing cells read as empty strings.
+  function readCover(wb, fileName, XLSX) {
+    const C = CONFIG.cover, ws = wb.Sheets[C.sheet];
+    if (!ws) return { present: false, issues: [] };
+    const txt = (a) => { const c = ws[C[a]]; return c && c.v !== undefined && c.v !== null ? String(c.v).trim() : ''; };
+    const minutesRaw = txt('minutes'), m = parseFloat(minutesRaw.replace(/,/g, ''));
+    const aiRaw = txt('ai'), reflection = txt('reflection');
+    return {
+      present: true, name: txt('name'), people: txt('people'), minutesRaw, minutes: isFinite(m) ? m : null,
+      ai: /^I used/i.test(aiRaw) ? 'used' : /^I did not/i.test(aiRaw) ? 'none' : '', aiHow: txt('aiHow'),
+      sources: txt('sources'), unfinished: txt('unfinished'), reflection, words: reflection ? reflection.split(/\s+/).filter(Boolean).length : 0,
+      signature: txt('signature'), date: txt('date'), issues: []
+    };
+  }
+
   function readTemplateVersion(wb) {
     const names = (wb.Workbook && wb.Workbook.Names) || [];
     const dn = names.find((n) => n.Name === 'TPL_VERSION');
@@ -272,6 +292,7 @@
     const fr = sec('Allowed functions');
     const bad = [];
     for (const name of wb.SheetNames) {
+      if (name === COVER()) continue;   // the cover tab has a word-count formula that is part of the template
       const ws = wb.Sheets[name];
       for (const addr of Object.keys(ws)) {
         if (addr[0] === '!' || !ws[addr].f) continue;
@@ -304,6 +325,7 @@
     const cases = buildCases(seed);
     const sheets = {};
     for (const name of wb.SheetNames) {
+      if (name === COVER()) continue;
       const ws = wb.Sheets[name]; const rows = [];
       if (ws['!ref']) {
         const rg = XLSX.utils.decode_range(ws['!ref']);
@@ -367,11 +389,34 @@
     const body = 'MTH160|' + VERSION + '|' + who + '|' + flags + '|P' + score.total + '|S' + seed + '|F' + fp;
     const code = body + '|K' + checksum(body);
 
-    const found = findCode(wb);
+    // Submission Info tab: read what the student wrote, and report what is missing. Not part of the score.
+    const cs = sec('Submission Info tab');
+    const cover = readCover(wb, fileName, XLSX);
+    const cf = [];
+    const chk = (ok, text, detail, problem) => { item(cs, ok, text, detail); if (!ok) cf.push(problem || text); };
+    if (!cover.present) { chk(false, 'Tab "' + CONFIG.cover.sheet + '" exists', 'Not found. Start from a fresh copy of the current template.', 'Submission Info tab missing'); }
+    else {
+      chk(!!cover.name, 'Your name is filled in', '', 'Name missing');
+      chk(!!cover.people, 'People you worked with is filled in (write None if none)', '', 'Worked-with missing');
+      chk(cover.minutes !== null && cover.minutes > 0, 'Time spent is a number of minutes', cover.minutesRaw ? 'Found: ' + cover.minutesRaw : '', 'Time spent missing or not a number');
+      chk(cover.ai !== '', 'AI statement is chosen', '', 'AI statement not chosen');
+      if (cover.ai === 'used') chk(!!cover.aiHow, 'AI use is described (which tools and how)', '', 'AI use not described');
+      const [lo, hi] = CONFIG.cover.reflectionWords;
+      chk(cover.words >= lo && cover.words <= hi, 'Reflection is ' + lo + ' to ' + hi + ' words', cover.words + ' words found', 'Reflection is ' + cover.words + ' words (needs ' + lo + ' to ' + hi + ')');
+      chk(!!cover.signature, 'Honor statement signed (full name typed)', '', 'Honor statement not signed');
+      const stem = String(fileName || '').replace(/\.xlsx$/i, '').replace(/[^A-Za-z]/g, '').toLowerCase();
+      const norm = (t) => String(t || '').replace(/[^A-Za-z]/g, '').toLowerCase();
+      if (cover.signature) chk(norm(cover.signature) === stem, 'Typed name matches the file name', 'Name "' + cover.signature + '" and file "' + fileName + '"', 'Typed name differs from file name');
+    }
+    cover.issues = cf;
+    const codeFound = findCode(wb);
+    item(cs, !!codeFound && codeFound.parsed.valid && codeFound.parsed.fp === fp, 'Submission code is pasted into the Submission Info tab and matches your current work',
+      !codeFound ? 'No code found in the file. Paste the code shown below into cell ' + CONFIG.cover.code + '.' : (codeFound.parsed.valid && codeFound.parsed.fp === fp ? '' : 'The code in ' + codeFound.sheet + '!' + codeFound.addr + ' is out of date or mistyped. Paste the new code.'));
+    const found = codeFound;
     const codeInFile = found ? { where: found.sheet + '!' + found.addr, parsed: found.parsed, current: found.parsed.valid && found.parsed.fp === fp } : null;
 
     const all = sections.flatMap((s) => s.items);
-    return { version: VERSION, templateVersion: tv, score, flags, fingerprint: fp, code, codeInFile, seed, sections, passed: all.filter((i) => i.ok).length, failed: all.filter((i) => !i.ok).length };
+    return { version: VERSION, templateVersion: tv, score, flags, fingerprint: fp, code, codeInFile, cover, seed, sections, passed: all.filter((i) => i.ok).length, failed: all.filter((i) => !i.ok).length };
   }
 
   return { run, CONFIG, VERSION, parseCode, checksum, findCode };

@@ -4,6 +4,12 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.4.0 (Fall 2026)
+- Template 1.1.0: new first tab, Submission Info, with the link to the checker, name, people worked with, minutes, AI statement (dropdown) and description, other sources, unfinished work, the reflection (with a live word count, 200 to 250 words), honor statement, a submit checklist, and the submission code cell. The code cell moved from Simple Interest J9 to Submission Info B27. Templates 1.0.x no longer pass the version check.
+- The checker reads the Submission Info tab. Missing or wrong fields (and a reflection outside 200 to 250 words, or a typed name that differs from the file name) appear under "Things to fix" on the student page. They do not change the score.
+- The grader shows each student's answers and full reflection in the row details, adds a "Submission Info" column, and flags files with issues for review. New CSV columns: `minutes`, `worked_with`, `ai_use`, `reflection_words`, `cover_issues`.
+- The function check and the test recalculation skip the Submission Info tab (its word-count formula is part of the template).
+
 ## 1.3.1 (Fall 2026)
 - Instructor grader page: added a collapsible key that explains the columns, categories, code statuses, integrity results, and a suggested review order. Hovering over a code status shows its meaning.
 - No change to scoring, test values, or the template.

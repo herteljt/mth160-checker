@@ -7,7 +7,7 @@
 
   const KEYS = ['layout', 'ops', 'instr', 'values', 'Simple Interest', 'Compound Interest', 'Continuous Compounded Interest', 'Future Value', 'Present Value', 'Income Tax Estimator', 'APY Calculator', 'Extra Credit - GPA Estimator'];
   const COLS = ['layout', 'ops', 'instr', 'values', 'SI', 'CI', 'CC', 'FV', 'PV', 'tax', 'apy', 'ec'];
-  const HEADER = ['file', 'student_id', 'auto_score', 'max', ...COLS, 'failed_checks', 'code_status', 'code_source', 'claimed_score', 'marker', 'trap_word', 'checker_version', 'template_version', 'failures'];
+  const HEADER = ['file', 'student_id', 'auto_score', 'max', ...COLS, 'failed_checks', 'code_status', 'code_source', 'claimed_score', 'marker', 'trap_word', 'checker_version', 'template_version', 'minutes', 'worked_with', 'ai_use', 'reflection_words', 'cover_issues', 'failures'];
 
   const q = (s) => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
 
@@ -98,20 +98,23 @@
       else if (san(c.student) !== stem) status = 'NAME_MISMATCH';
       else status = res.flags === c.flags ? 'OK' : 'OK_GRADING_SEED_DIFFERS';
     }
-    const fails = res.sections.flatMap((s) => s.items.filter((i) => !i.ok).map((i) => s.title + ' - ' + i.text));
+    const COVER_TITLE = 'Submission Info tab';
+    const fails = res.sections.filter((s) => s.title !== COVER_TITLE).flatMap((s) => s.items.filter((i) => !i.ok).map((i) => s.title + ' - ' + i.text));
+    const cover = res.cover || { present: false, issues: [] };
     const missed = res.score.categories.filter((c) => !c.ok && !c.extra).map((c) => c.label);
-    const flagged = missed.length > 0 || !['n/a', 'OK'].includes(status) || ['ALTERED', 'MISSING'].includes(ig.marker) || ig.trap.length > 0;
-    return { fileName, orig, res, ig, status, source, claimed, fails, missed, flagged };
+    const flagged = missed.length > 0 || !['n/a', 'OK'].includes(status) || ['ALTERED', 'MISSING'].includes(ig.marker) || ig.trap.length > 0 || cover.issues.length > 0;
+    return { fileName, orig, res, ig, status, source, claimed, fails, missed, cover, flagged };
   }
 
   const csvHeader = () => HEADER.join(',');
   function csvRow(r) {
     const earned = Object.fromEntries(r.res.score.categories.map((c) => [c.key, c.earned]));
     return [q(r.fileName.split(/[\\/]/).pop()), r.orig.userId || '', r.res.score.total, r.res.score.max, ...KEYS.map((k) => earned[k]), r.res.failed, r.status, r.source, r.claimed,
-      r.ig.marker, q(r.ig.trap.join(' ')), r.res.version, r.res.templateVersion || 'none', q(r.fails.join(' | '))].join(',');
+      r.ig.marker, q(r.ig.trap.join(' ')), r.res.version, r.res.templateVersion || 'none',
+      r.cover.minutes == null ? '' : r.cover.minutes, q(r.cover.people || ''), r.cover.ai || '', r.cover.present ? r.cover.words : '', q((r.cover.present ? r.cover.issues : ['Submission Info tab missing']).join(' | ')), q(r.fails.join(' | '))].join(',');
   }
   const orphanRows = (codes) => (codes || []).filter((e) => !e.used && e.code)
-    .map((e) => [q('(no file found)'), e.id || '', '', '', ...COLS.map(() => ''), '', 'CODE_NO_FILE', 'quiz', e.code.points, '', '', '', '', q(e.code.student)].join(','));
+    .map((e) => [q('(no file found)'), e.id || '', '', '', ...COLS.map(() => ''), '', 'CODE_NO_FILE', 'quiz', e.code.points, '', '', '', '', '', '', '', '', '', q(e.code.student)].join(','));
   const noCodeCount = (codes) => (codes || []).filter((e) => !e.code && (e.id || e.name)).length;
 
   return { KEYS, COLS, HEADER, parseCsv, originalName, parseCodes, integrity, gradeOne, csvHeader, csvRow, orphanRows, noCodeCount };

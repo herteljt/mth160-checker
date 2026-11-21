@@ -1,7 +1,7 @@
 # MTH 160 Portfolio Checker
 
 Students open the GitHub Pages URL, select their .xlsx file, and get a pass/fail report, an estimate of
-their automated points, and a submission code. The student pastes the code into a cell of their own spreadsheet (Simple Interest, J9) and submits that file.
+their automated points, and a submission code. The student pastes the code into a cell of their own spreadsheet (Submission Info tab) and submits that file.
 The file is processed in the browser and never uploaded.
 
 ## Deploy
@@ -25,7 +25,7 @@ Points are set in `CONFIG.points` in `checker.js`. A category earns its points o
 | APY Comparison Calculator | 7 | All tests pass and F1 uses an IF statement |
 | Extra credit: GPA | 2 | All tests pass |
 
-Reflection, scratchwork, and the spreadsheet upload are graded in Canvas.
+The first tab of the template, Submission Info, holds the student's name, who they worked with, time spent, AI statement, reflection, honor statement, and the submission code. It is not part of the score and not fingerprinted: the checker lists missing fields under "Things to fix", and the grader shows them with the reflection. Instruction quality, scratchwork, and the reflection are graded by hand.
 
 Code status values: `OK`, `OK_GRADING_SEED_DIFFERS`, `FILE_CHANGED`, `CLAIM_MISMATCH`, `NAME_MISMATCH`, `BAD_CHECKSUM`, `NO_CODE`, `CODE_NO_FILE`. A status other than `OK` is a reason to look at the submission, not a finding of misconduct.
 
@@ -33,7 +33,7 @@ Code status values: `OK`, `OK_GRADING_SEED_DIFFERS`, `FILE_CHANGED`, `CLAIM_MISM
 After a check, the page shows a code such as
 `MTH160|1.3.0|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
 (version, student, pass flags by category, points, test seed, file fingerprint, checksum).
-Students paste it into cell J9 of the Simple Interest tab, save the file under the same name, and submit it. The instructor tools read the code out of each spreadsheet, so no quiz export is needed. The code cell is left out of the file fingerprint, so pasting the code does not change it, but any later change to the work does. The code is not tamper-proof (the checker runs in the browser), so the instructor tools recompute everything from the uploaded file.
+Students paste it into the Submission Info tab (the first tab of the template), save the file under the same name, and submit it. The instructor tools read the code out of each spreadsheet, so no quiz export is needed. The code cell is left out of the file fingerprint, so pasting the code does not change it, but any later change to the work does. The code is not tamper-proof (the checker runs in the browser), so the instructor tools recompute everything from the uploaded file.
 
 ## Grade a class online (instructor page)
 Open `https://<username>.github.io/<repo>/grader.html`.
@@ -49,7 +49,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.3.1** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.4.0** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 

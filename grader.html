@@ -26,6 +26,8 @@
   .detail ul{margin:.2rem 0 .2rem 1.1rem;padding:0}
   code{font-family:monospace;font-size:.85rem;word-break:break-word}
   .note{font-size:.9rem;color:#444}
+  .cover{margin:.3rem 0 .6rem;padding:.4rem .6rem;border:1px solid #ddd;background:#fff}
+  .reflection{white-space:pre-wrap;margin:.2rem 0 0;padding:.4rem .6rem;border-left:3px solid #bbb;background:#f7f7f7;max-width:60rem}
   details.key{border:1px solid #ccc;border-radius:6px;padding:.4rem .9rem;margin:.8rem 0;background:#fafafa}
   details.key>summary{cursor:pointer;font-weight:600}
   details.key h3{font-size:1rem;margin:1rem 0 .3rem}
@@ -44,8 +46,8 @@ The grading seed and integrity settings are typed in here and are never stored.<
   <ol>
     <li>Choose the Canvas submissions .zip (or the .xlsx files), enter your private grading seed, and open Integrity settings to type the template marker and trap word.</li>
     <li>Click Run grading. Tick "Show only files that need review" to see just the flagged rows (red bar on the left). Green bar means nothing to look at.</li>
-    <li>Click any row to open its details: the code the student pasted and every failed check with the values that were tested.</li>
-    <li>Click Download CSV to keep the full results. Enter the automated score in Canvas and add the hand-graded parts (instructions quality, reflection, scratchwork).</li>
+    <li>Click any row to open its details: the student's Submission Info answers and reflection, the code they pasted, and every failed check with the values that were tested.</li>
+    <li>Click Download CSV to keep the full results (it includes minutes, who they worked with, AI statement, and reflection word count). Enter the automated score in Canvas and add the hand-graded parts (instructions quality, reflection, scratchwork).</li>
   </ol>
 
   <h3>Columns</h3>
@@ -53,6 +55,7 @@ The grading seed and integrity settings are typed in here and are never stored.<
     <tr><th>Auto score</th><td>Points earned by the automated checks, as "earned / possible". Extra credit is shown as "+ 2 EC". A category earns its points only if every check in it passes.</td></tr>
     <tr><th>Categories without points</th><td>Which categories lost points. Click the row for the exact failed checks.</td></tr>
     <tr><th>Code</th><td>Whether the submission code matches the file (see below). The word in parentheses says where the code was found: <b>file</b> (pasted in the spreadsheet) or <b>quiz</b> (quiz export).</td></tr>
+    <tr><th>Submission Info</th><td>"complete", or the fields on the student's Submission Info tab that are missing or wrong: name, people worked with, minutes, AI statement, AI description (when AI was used), reflection length (200 to 250 words), signature, and whether the typed name matches the file name. This is not part of the automated score. Any issue puts the row in the review list.</td></tr>
     <tr><th>Integrity</th><td>The template marker result and any trap-word hits. These are weak signals for triage.</td></tr>
   </table>
 
@@ -87,10 +90,19 @@ The grading seed and integrity settings are typed in here and are never stored.<
     <tr><th>trap word at ...</th><td>Cells that contain your trap word.</td></tr>
   </table>
 
+  <h3>Submission Info tab</h3>
+  <table class="kt">
+    <tr><th>Worked with, minutes</th><td>Self-reported. Unusually low times, or several students with the same unusual answers, are worth a look. They are not evidence on their own.</td></tr>
+    <tr><th>AI statement</th><td>The student chose "did not use AI tools" or "used AI tools" and described how. Compare it with what you see in the work.</td></tr>
+    <tr><th>Reflection</th><td>Shown in full in the row details, with its word count, so you can grade it without opening the file. The grader does not try to detect AI-written text.</td></tr>
+    <tr><th>Name check</th><td>The typed name is compared with the file name. A copied file often keeps the original student's name.</td></tr>
+  </table>
+
   <h3>Suggested review order</h3>
   <ol>
     <li><b>FILE_CHANGED, CLAIM_MISMATCH, NAME_MISMATCH, BAD_CHECKSUM:</b> open the file and compare it with what the student reported.</li>
     <li><b>NO_CODE:</b> usually a student who skipped the paste step. Ask for the code or grade on the automated score.</li>
+    <li><b>Submission Info issues:</b> usually a missing reflection, signature, or AI statement. Ask the student to complete it.</li>
     <li><b>Marker MISSING or ALTERED, trap word hits:</b> weak signals. Look at the work itself and, if you have doubts, talk with the student.</li>
     <li><b>Lost categories only:</b> no review needed beyond confirming the failed checks. These are just lost points.</li>
   </ol>
@@ -170,7 +182,7 @@ async function collectFiles(fileList) {
 function render() {
   const only = $('onlyflag').checked, box = $('results'); box.textContent = '';
   const tb = el('table'), hd = el('tr');
-  ['File', 'Auto score', 'Categories without points', 'Code', 'Integrity'].forEach((h) => hd.appendChild(el('th', '', h)));
+  ['File', 'Auto score', 'Categories without points', 'Code', 'Submission Info', 'Integrity'].forEach((h) => hd.appendChild(el('th', '', h)));
   tb.appendChild(hd);
   for (const r of graded) {
     if (only && !r.flagged) continue;
@@ -179,11 +191,23 @@ function render() {
     tr.appendChild(el('td', 'n', s.core + ' / ' + s.max + (s.extra ? ' + ' + s.extra + ' EC' : '')));
     tr.appendChild(el('td', '', r.missed.join('; ') || 'none'));
     const st = el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status + (r.source ? ' (' + r.source + ')' : '')); st.title = STATUS_HELP[r.status] || ''; tr.appendChild(st);
+    const cv = r.cover, cvIssues = cv.present ? cv.issues : ['tab missing'];
+    const cvTd = el('td', cvIssues.length ? 'warn' : '', cvIssues.length ? cvIssues.join('; ') : 'complete'); tr.appendChild(cvTd);
     const integ = r.ig.marker === 'n/a' && !r.ig.trap.length ? 'n/a' : 'marker ' + r.ig.marker + (r.ig.trap.length ? '; trap word at ' + r.ig.trap.join(', ') : '');
     tr.appendChild(el('td', ['OK', 'n/a'].includes(r.ig.marker) && !r.ig.trap.length ? '' : 'warn', integ));
     const dt = el('tr', 'detail'); dt.hidden = true;
-    const td = el('td'); td.colSpan = 5;
+    const td = el('td'); td.colSpan = 6;
     td.appendChild(el('div', '', 'Submission code' + (r.source ? ' (found in ' + (r.source === 'file' ? 'the spreadsheet' : 'the quiz export') + ')' : '') + ': ' + (r.claimed === '' ? 'none or invalid' : r.claimed + ' points claimed')));
+    if (cv.present) {
+      const info = el('div', 'cover');
+      const line = (k, v) => { const d = el('div'); d.appendChild(el('b', '', k + ': ')); d.appendChild(document.createTextNode(v || '(blank)')); info.appendChild(d); };
+      line('Name', cv.name); line('Worked with', cv.people); line('Time spent', cv.minutesRaw ? cv.minutesRaw + ' minutes' : '');
+      line('AI statement', cv.ai === 'none' ? 'did not use AI tools' : cv.ai === 'used' ? 'used AI tools' : ''); if (cv.ai === 'used' || cv.aiHow) line('AI use', cv.aiHow);
+      line('Other sources', cv.sources); line('Unfinished or not working', cv.unfinished); line('Signed', cv.signature + (cv.date ? ' (' + cv.date + ')' : ''));
+      const rf = el('div'); rf.appendChild(el('b', '', 'Reflection (' + cv.words + ' words): '));
+      const rt = el('div', 'reflection', cv.reflection || '(blank)'); info.appendChild(rf); info.appendChild(rt);
+      td.appendChild(info);
+    }
     if (r.fails.length) { const ul = el('ul'); r.fails.forEach((f) => ul.appendChild(el('li', '', f))); td.appendChild(ul); }
     else td.appendChild(el('div', '', 'All checks passed.'));
     dt.appendChild(td);
