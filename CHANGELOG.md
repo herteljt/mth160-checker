@@ -4,6 +4,10 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.3.1 (Fall 2026)
+- Instructor grader page: added a collapsible key that explains the columns, categories, code statuses, integrity results, and a suggested review order. Hovering over a code status shows its meaning.
+- No change to scoring, test values, or the template.
+
 ## 1.3.0 (Fall 2026)
 - The submission code now travels inside the spreadsheet. Students paste it into Simple Interest!J9 and submit the file. The grader and `cli.js` read the code from each file; the quiz export is optional and is used only for files with no code of their own.
 - The file fingerprint ignores the cell that holds the code, so pasting the code does not change it, while any later edit to the work still does (`FILE_CHANGED`). Fingerprints of files without a code are unchanged.

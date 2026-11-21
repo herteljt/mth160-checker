@@ -26,12 +26,76 @@
   .detail ul{margin:.2rem 0 .2rem 1.1rem;padding:0}
   code{font-family:monospace;font-size:.85rem;word-break:break-word}
   .note{font-size:.9rem;color:#444}
+  details.key{border:1px solid #ccc;border-radius:6px;padding:.4rem .9rem;margin:.8rem 0;background:#fafafa}
+  details.key>summary{cursor:pointer;font-weight:600}
+  details.key h3{font-size:1rem;margin:1rem 0 .3rem}
+  table.kt{font-size:.9rem}
+  table.kt th{background:#f2f2f2;white-space:nowrap;width:1%}
 </style>
 </head>
 <body>
 <h1>MTH 160 Instructor Grader <small id="ver" style="font-size:.5em;color:#666"></small></h1>
 <p class="note">Everything runs in your browser. Student files are read on this computer and are not uploaded anywhere.
 The grading seed and integrity settings are typed in here and are never stored.</p>
+
+<details id="key" class="key">
+  <summary>Key: how to use this page and read the results</summary>
+  <h3>Workflow</h3>
+  <ol>
+    <li>Choose the Canvas submissions .zip (or the .xlsx files), enter your private grading seed, and open Integrity settings to type the template marker and trap word.</li>
+    <li>Click Run grading. Tick "Show only files that need review" to see just the flagged rows (red bar on the left). Green bar means nothing to look at.</li>
+    <li>Click any row to open its details: the code the student pasted and every failed check with the values that were tested.</li>
+    <li>Click Download CSV to keep the full results. Enter the automated score in Canvas and add the hand-graded parts (instructions quality, reflection, scratchwork).</li>
+  </ol>
+
+  <h3>Columns</h3>
+  <table class="kt">
+    <tr><th>Auto score</th><td>Points earned by the automated checks, as "earned / possible". Extra credit is shown as "+ 2 EC". A category earns its points only if every check in it passes.</td></tr>
+    <tr><th>Categories without points</th><td>Which categories lost points. Click the row for the exact failed checks.</td></tr>
+    <tr><th>Code</th><td>Whether the submission code matches the file (see below). The word in parentheses says where the code was found: <b>file</b> (pasted in the spreadsheet) or <b>quiz</b> (quiz export).</td></tr>
+    <tr><th>Integrity</th><td>The template marker result and any trap-word hits. These are weak signals for triage.</td></tr>
+  </table>
+
+  <h3>Categories that can lose points</h3>
+  <table class="kt">
+    <tr><th>Template and layout</th><td>File name is not First_Last.xlsx, the template version is not current, or a required tab is missing.</td></tr>
+    <tr><th>Only allowed operations</th><td>A function other than IF, AND, OR, LN or EXP was used (the template's own SUM cells are allowed).</td></tr>
+    <tr><th>Instructions on every tab</th><td>A tab has no written instructions in A1:D2. This checks that text exists, not whether it is good.</td></tr>
+    <tr><th>Required test values</th><td>The published test values are not typed in the input cells.</td></tr>
+    <tr><th>Each calculator, tax, APY</th><td>A randomized test failed, or an answer cell holds a typed number instead of a formula. Tax also needs at least 7 IF formulas per filer in the logic area, and APY needs an IF in F1.</td></tr>
+  </table>
+
+  <h3>Code status</h3>
+  <p class="hint">The grader reruns the check on the file and compares it with the code the student pasted.</p>
+  <table class="kt">
+    <tr><th>OK</th><td>The code matches the file and the points it claims.</td></tr>
+    <tr><th>OK_GRADING_SEED_DIFFERS</th><td>The code is honest, but your seed gives different flags. Look at the file.</td></tr>
+    <tr><th>FILE_CHANGED</th><td>The work was edited after the student got the code, or a different file was submitted.</td></tr>
+    <tr><th>CLAIM_MISMATCH</th><td>The code claims results the file does not produce.</td></tr>
+    <tr><th>NAME_MISMATCH</th><td>The code is valid for this content but was issued under another name. Typical of a copied file, but a renamed file does it too.</td></tr>
+    <tr><th>BAD_CHECKSUM</th><td>The code was mistyped or edited.</td></tr>
+    <tr><th>NO_CODE</th><td>No code in the spreadsheet, and none in the quiz export. Ask the student for it, or grade on the automated score alone.</td></tr>
+    <tr><th>CODE_NO_FILE</th><td>A code is in the quiz export but no matching file was found. Appears only when you load the quiz CSV.</td></tr>
+  </table>
+
+  <h3>Integrity</h3>
+  <table class="kt">
+    <tr><th>marker OK</th><td>The hidden template marker is intact.</td></tr>
+    <tr><th>marker ALTERED</th><td>A marker cell exists but holds a different value.</td></tr>
+    <tr><th>marker MISSING</th><td>No marker at all, for example a file rebuilt from scratch or pasted into a new workbook.</td></tr>
+    <tr><th>marker n/a</th><td>You left the marker field empty.</td></tr>
+    <tr><th>trap word at ...</th><td>Cells that contain your trap word.</td></tr>
+  </table>
+
+  <h3>Suggested review order</h3>
+  <ol>
+    <li><b>FILE_CHANGED, CLAIM_MISMATCH, NAME_MISMATCH, BAD_CHECKSUM:</b> open the file and compare it with what the student reported.</li>
+    <li><b>NO_CODE:</b> usually a student who skipped the paste step. Ask for the code or grade on the automated score.</li>
+    <li><b>Marker MISSING or ALTERED, trap word hits:</b> weak signals. Look at the work itself and, if you have doubts, talk with the student.</li>
+    <li><b>Lost categories only:</b> no review needed beyond confirming the failed checks. These are just lost points.</li>
+  </ol>
+  <p class="hint">A flag is a reason to look at a submission, not a finding of misconduct. A re-save in another program can remove the marker, and a student can innocently reuse the trap word.</p>
+</details>
 
 <fieldset>
   <legend>1. Student files</legend>
@@ -72,6 +136,16 @@ The grading seed and integrity settings are typed in here and are never stored.<
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const STATUS_HELP = {
+  OK: 'The code matches the file and the points it claims.',
+  OK_GRADING_SEED_DIFFERS: 'The code is honest, but your seed gives different flags. Look at the file.',
+  FILE_CHANGED: 'The work was edited after the code was issued, or a different file was submitted.',
+  CLAIM_MISMATCH: 'The code claims results the file does not produce.',
+  NAME_MISMATCH: 'The code is valid for this content but was issued under another name (copied or renamed file).',
+  BAD_CHECKSUM: 'The code was mistyped or edited.',
+  NO_CODE: 'No code in the spreadsheet or the quiz export.',
+  CODE_NO_FILE: 'A code in the quiz export has no matching file.'
+};
 const tick = () => new Promise((r) => setTimeout(r, 0));
 $('ver').textContent = 'v' + Checker.VERSION + ' (template v' + Checker.CONFIG.templateVersion + ')';
 let graded = [], codes = null, csvText = '';
@@ -104,7 +178,7 @@ function render() {
     tr.appendChild(el('td', '', r.fileName));
     tr.appendChild(el('td', 'n', s.core + ' / ' + s.max + (s.extra ? ' + ' + s.extra + ' EC' : '')));
     tr.appendChild(el('td', '', r.missed.join('; ') || 'none'));
-    tr.appendChild(el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status + (r.source ? ' (' + r.source + ')' : '')));
+    const st = el('td', ['n/a', 'OK'].includes(r.status) ? '' : 'warn', r.status + (r.source ? ' (' + r.source + ')' : '')); st.title = STATUS_HELP[r.status] || ''; tr.appendChild(st);
     const integ = r.ig.marker === 'n/a' && !r.ig.trap.length ? 'n/a' : 'marker ' + r.ig.marker + (r.ig.trap.length ? '; trap word at ' + r.ig.trap.join(', ') : '');
     tr.appendChild(el('td', ['OK', 'n/a'].includes(r.ig.marker) && !r.ig.trap.length ? '' : 'warn', integ));
     const dt = el('tr', 'detail'); dt.hidden = true;
