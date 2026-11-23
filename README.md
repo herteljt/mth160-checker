@@ -30,7 +30,7 @@ Code status values: `OK`, `OK_GRADING_SEED_DIFFERS`, `FILE_CHANGED`, `CLAIM_MISM
 
 ## Submission code
 After a check, the page shows a code such as
-`MTH160|1.5.4|Jordan_Smith|B111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
+`MTH160|1.5.5|Jordan_Smith|B111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
 (version, student, pass flags by category, points, test seed, file fingerprint, checksum).
 Students paste it into the Submission Info tab (the first tab of the template), save the file under the same name, and submit it. The instructor tools read the code out of each spreadsheet, so no quiz export is needed. The code cell is left out of the file fingerprint, so pasting the code does not change it, but any later change to the work does. The code is not tamper-proof (the checker runs in the browser), so the instructor tools recompute everything from the uploaded file.
 
@@ -48,7 +48,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.5.4** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.5.5** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 

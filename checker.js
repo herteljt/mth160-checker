@@ -4,11 +4,11 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.5.4';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.5.5';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
-    templateVersion: '1.2.3',       // current student template. Only major.minor must match
+    templateVersion: '1.2.4',       // current student template. Only major.minor must match
     cover: {                          // the Submission Info tab (first tab of the template)
       sheet: 'Submission Info', name: 'B6', people: 'B7', minutes: 'B8', ai: 'B9', aiHow: 'B10', sources: 'B11', unfinished: 'B12',
       reflection: 'A16', signature: 'B22', date: 'B23', code: 'B27', reflectionWords: [200, 250]

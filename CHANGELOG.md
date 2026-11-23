@@ -4,6 +4,9 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.5.5 (Fall 2026)
+- Template 1.2.4: the Credit Card Interest daily table (E5:F34) is now a yellow LOGIC AREA, matching the other tabs. Row 35 shows the Average of the daily balances (E35) and the Total interest (F35), so the Average Daily Balance answer (B13) uses E35 directly.
+
 ## 1.5.4 (Fall 2026)
 - Federal Income Tax Estimator is now worth 8 points (the 1-point spreadsheet upload item was removed). Automated core total is 80. Template unchanged (v1.2.3).
 - The "required test values typed in" check was removed (3 points); Instructions on every tab is now 10 points. The submission code's base flags are now 3 digits (B###).
