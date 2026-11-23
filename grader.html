@@ -207,8 +207,9 @@ function render() {
       const rt = el('div', 'reflection', cv.reflection || '(blank)'); info.appendChild(rf); info.appendChild(rt);
       td.appendChild(info);
     }
+    const fh = el('div'); fh.appendChild(el('b', '', 'Automated checks that failed (these are the points the student lost): ')); td.appendChild(fh);
     if (r.fails.length) { const ul = el('ul'); r.fails.forEach((f) => ul.appendChild(el('li', '', f))); td.appendChild(ul); }
-    else td.appendChild(el('div', '', 'All checks passed.'));
+    else td.appendChild(el('div', '', 'None. Every automated check passed.'));
     dt.appendChild(td);
     tr.addEventListener('click', () => { dt.hidden = !dt.hidden; });
     tb.appendChild(tr); tb.appendChild(dt);
