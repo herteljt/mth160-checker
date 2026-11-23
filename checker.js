@@ -4,7 +4,7 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.5.3';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.5.4';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
@@ -37,9 +37,9 @@
     // Automated points. All-or-nothing: a category earns its points only if every check in it passes.
     // Reflection (10), scratchwork (10) and the upload question (1) are graded in Canvas, not here.
     points: {
-      base: { layout: 5, ops: 10, instructions: 7, values: 3 },   // sums to 25
+      base: { layout: 5, ops: 10, instructions: 10 },   // sums to 25
       calc: { 'Simple Interest': 8, 'Compound Interest': 8, 'Continuous Compounded Interest': 8, 'Future Value': 8, 'Present Value': 8 },
-      tax: 7, apy: 7, ec: 2
+      tax: 8, apy: 7, ec: 2
     },
     // Values students must leave typed in the input cells (the published test values)
     testValues: {
@@ -202,7 +202,7 @@
   // Parse a submission code. Returns null if none is found; .valid is false if the checksum fails.
   function parseCode(raw) {
     const text = String(raw == null ? '' : raw).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ');
-    const m = text.match(/MTH160\|[^\s|]+\|[^\s|]+\|B[01]{4}\|C[01]{5}\|T[01]\|A[01]\|E[01]\|P\d+\|S\d+\|F[0-9a-f]{8}\|K[0-9A-Z]{3}/);
+    const m = text.match(/MTH160\|[^\s|]+\|[^\s|]+\|B[01]{3}\|C[01]{5}\|T[01]\|A[01]\|E[01]\|P\d+\|S\d+\|F[0-9a-f]{8}\|K[0-9A-Z]{3}/);
     if (!m) return null;
     const full = m[0], i = full.lastIndexOf('|K'), body = full.slice(0, i), f = body.split('|');
     return { raw: full, valid: checksum(body) === full.slice(i + 2), version: f[1], student: f[2],
@@ -291,22 +291,6 @@
       const hasI = text.length >= CONFIG.minInstructionChars;
       if (REQUIRED.includes(name) && !hasI) instrOk = false;
       item(st, hasI, '"' + name + '" has written instructions (A1:D2)', text.length + ' characters found');
-    }
-
-    // Required test values
-    const tvSec = sec('Test values');
-    let valuesOk = true;
-    for (const name of REQUIRED) {
-      if (!present[name]) { valuesOk = false; continue; }
-      const miss = [];
-      for (const [addr, want] of Object.entries(CONFIG.testValues[name] || {})) {
-        const c = cellAt(name, addr), got = c ? c.v : undefined;
-        if (!(typeof got === 'number' && Math.abs(got - want) <= 1e-9 * Math.max(1, Math.abs(want))))
-          miss.push(addr + ' should be ' + want + (got === undefined || got === null || got === '' ? ' (blank)' : ' (found ' + got + ')'));
-      }
-      if (miss.length) valuesOk = false;
-      item(tvSec, miss.length === 0, 'Required test values entered on "' + name + '"',
-        miss.slice(0, 6).join('; ') + (miss.length > 6 ? ' (+' + (miss.length - 6) + ' more)' : ''));
     }
 
     // Function rules
@@ -404,7 +388,6 @@
       { key: 'layout', group: 'B', label: 'Template and layout (file name, current template, all tabs)', ok: fnOk && verOk && tabsOk, max: P.base.layout },
       { key: 'ops', group: 'B', label: 'Only allowed operations used', ok: opsOk, max: P.base.ops },
       { key: 'instr', group: 'B', label: 'Instructions on every tab', ok: instrOk, max: P.base.instructions },
-      { key: 'values', group: 'B', label: 'Required test values entered', ok: valuesOk, max: P.base.values },
       ...[SI, CI, CC, FV, PV].map((n) => ({ key: n, group: 'C', label: n + ' calculator', ok: passTab(n), max: P.calc[n] })),
       { key: TAX, group: 'T', label: 'Federal Income Tax Estimator', ok: passTab(TAX) && taxLogicOk, max: P.tax },
       { key: APY, group: 'A', label: 'APY Comparison Calculator', ok: passTab(APY) && apyLogicOk, max: P.apy },

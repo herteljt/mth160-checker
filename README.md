@@ -18,10 +18,9 @@ Points are set in `CONFIG.points` in `checker.js`. A category earns its points o
 | --- | --- | --- |
 | Template and layout | 5 | File name `First_Last.xlsx`, current template version, all seven required tabs present |
 | Only allowed operations | 10 | No function outside IF, AND, OR, LN, EXP (the template's own SUM cells are allowed) |
-| Instructions on every tab | 7 | Written instructions present in A1:D2 on each required tab (quality is graded by hand) |
-| Required test values entered | 3 | The published test values are typed in the input cells of each required tab |
+| Instructions on every tab | 10 | Written instructions present in A1:D2 on each required tab (quality is graded by hand) |
 | Each financial calculator | 8 x 5 | Every randomized test case passes, and answers are formulas, not typed numbers |
-| Federal Income Tax Estimator | 7 | All tests pass and each filer's logic area (D4:J12, D19:J27) holds at least 7 IF formulas |
+| Federal Income Tax Estimator | 8 | All tests pass and each filer's logic area (D4:J12, D19:J27) holds at least 7 IF formulas |
 | APY Comparison Calculator | 7 | All tests pass and F1 uses an IF statement |
 | Extra credit: Credit Card Interest | 2 | All five randomized scenarios pass (outputs and every one of the 30 daily rows), answers are formulas, and each balance in E5:E34 uses an IF statement |
 
@@ -31,7 +30,7 @@ Code status values: `OK`, `OK_GRADING_SEED_DIFFERS`, `FILE_CHANGED`, `CLAIM_MISM
 
 ## Submission code
 After a check, the page shows a code such as
-`MTH160|1.3.0|Jordan_Smith|B1111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
+`MTH160|1.5.4|Jordan_Smith|B111|C11111|T1|A1|E1|P81|S600473659|F1332120e|KDZR`
 (version, student, pass flags by category, points, test seed, file fingerprint, checksum).
 Students paste it into the Submission Info tab (the first tab of the template), save the file under the same name, and submit it. The instructor tools read the code out of each spreadsheet, so no quiz export is needed. The code cell is left out of the file fingerprint, so pasting the code does not change it, but any later change to the work does. The code is not tamper-proof (the checker runs in the browser), so the instructor tools recompute everything from the uploaded file.
 
@@ -49,7 +48,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.5.3** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.5.4** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 

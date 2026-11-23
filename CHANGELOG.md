@@ -4,6 +4,10 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.5.4 (Fall 2026)
+- Federal Income Tax Estimator is now worth 8 points (the 1-point spreadsheet upload item was removed). Automated core total is 80. Template unchanged (v1.2.3).
+- The "required test values typed in" check was removed (3 points); Instructions on every tab is now 10 points. The submission code's base flags are now 3 digits (B###).
+
 ## 1.5.3 (Fall 2026)
 - Template 1.2.3: every logic area now carries the same note: "Use IF and AND only. Do not use MAX, MIN, VLOOKUP, IFS, or any other built-in function." The instruction to write one IF per bracket is removed.
 - Income Tax Estimator: the yellow logic area is larger (D4:J12 for Single, D19:J27 for Married Filing Jointly) so students have room for more than one column of logic. The checker counts IF formulas in the larger area (still at least 7 per filer).
