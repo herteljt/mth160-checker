@@ -207,7 +207,11 @@ function render() {
       const rt = el('div', 'reflection', cv.reflection || '(blank)'); info.appendChild(rf); info.appendChild(rt);
       td.appendChild(info);
     }
-    const fh = el('div'); fh.appendChild(el('b', '', 'Automated checks that failed (these are the points the student lost): ')); td.appendChild(fh);
+    const lost = s.categories.filter((c) => !c.ok);
+    const ph = el('div'); ph.appendChild(el('b', '', 'Points lost: '));
+    ph.appendChild(document.createTextNode(lost.length ? lost.map((c) => c.label.replace(/ \(.*\)$/, '') + ' (' + (c.extra ? 'extra credit ' : '') + '-' + c.max + ')').join('; ') + '. Total automated: ' + s.core + ' of ' + s.max + (s.extra ? ' + ' + s.extra + ' extra credit' : '') : 'none. ' + s.core + ' of ' + s.max + (s.extra ? ' + ' + s.extra + ' extra credit' : '')));
+    td.appendChild(ph);
+    const fh = el('div'); fh.appendChild(el('b', '', 'Failed checks behind those lost points (a category loses all its points if any one check in it fails): ')); td.appendChild(fh);
     if (r.fails.length) { const ul = el('ul'); r.fails.forEach((f) => ul.appendChild(el('li', '', f))); td.appendChild(ul); }
     else td.appendChild(el('div', '', 'None. Every automated check passed.'));
     dt.appendChild(td);
