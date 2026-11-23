@@ -5,7 +5,7 @@
   else root.Grading = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const KEYS = ['layout', 'ops', 'instr', 'values', 'Simple Interest', 'Compound Interest', 'Continuous Compounded Interest', 'Future Value', 'Present Value', 'Income Tax Estimator', 'APY Calculator', 'Extra Credit - GPA Estimator'];
+  const KEYS = ['layout', 'ops', 'instr', 'values', 'Simple Interest', 'Compound Interest', 'Continuous Compounded Interest', 'Future Value', 'Present Value', 'Income Tax Estimator', 'APY Calculator', 'Extra Credit - Card Interest'];
   const COLS = ['layout', 'ops', 'instr', 'values', 'SI', 'CI', 'CC', 'FV', 'PV', 'tax', 'apy', 'ec'];
   const HEADER = ['file', 'student_id', 'auto_score', 'max', ...COLS, 'failed_checks', 'code_status', 'code_source', 'claimed_score', 'marker', 'trap_word', 'checker_version', 'template_version', 'minutes', 'worked_with', 'ai_use', 'reflection_words', 'cover_issues', 'failures'];
 

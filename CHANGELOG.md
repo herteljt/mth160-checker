@@ -4,6 +4,25 @@ Versions follow MAJOR.MINOR.PATCH.
 - MAJOR or MINOR: the template layout, tested cells, or grading rules changed. Students must use the matching template (the checker compares major.minor).
 - PATCH: wording, messages, packaging, or fixes that do not change what is tested.
 
+## 1.5.3 (Fall 2026)
+- Template 1.2.3: every logic area now carries the same note: "Use IF and AND only. Do not use MAX, MIN, VLOOKUP, IFS, or any other built-in function." The instruction to write one IF per bracket is removed.
+- Income Tax Estimator: the yellow logic area is larger (D4:J12 for Single, D19:J27 for Married Filing Jointly) so students have room for more than one column of logic. The checker counts IF formulas in the larger area (still at least 7 per filer).
+- No change to scoring or tests otherwise.
+
+## 1.5.2 (Fall 2026)
+- Template 1.2.2: guidance added next to each logic area. Income Tax Estimator (both filers): write one IF formula per bracket, AND and OR allowed, no MIN, MAX, VLOOKUP, SUMIF, IFS, or other built-in functions. APY Calculator: use IF and AND only, and use an IF in F1 to name the winning bank. Card Interest: use IF statements in the balance column.
+- No change to scoring or tests.
+
+## 1.5.1 (Fall 2026)
+- Template 1.2.1: the Simple Interest answer cells B4 (Case 1) and B12 (Case 2) now carry the word FINDING, like the other answer cells.
+- No change to scoring or tests.
+
+## 1.5.0 (Fall 2026)
+- Template 1.2.0: the GPA extra-credit tab is replaced by "Extra Credit - Card Interest". It models one 30-day billing cycle with simple daily interest: inputs for starting balance, APR, one purchase and one payment (amount and day), a 30-row daily table (balance and daily interest), and outputs for interest charged, average daily balance, and ending balance. The template pre-fills the column totals (SUM in E35 and F35).
+- Checker: five randomized scenarios (no activity, purchase only, payment only, purchase then payment, payment then purchase). Each scenario checks the three outputs and all 30 daily balances and daily interest values. Each balance in E5:E34 must use an IF statement. Still worth 2 points of extra credit.
+- Long lists of failed cells are shortened to the first six on the student page.
+- Conventions the tests assume: 30-day cycle, daily rate = APR / 365, a purchase or payment counts in the balance from its day on, interest is not added to the balance until the cycle ends, no rounding, no grace period.
+
 ## 1.4.0 (Fall 2026)
 - Template 1.1.0: new first tab, Submission Info, with the link to the checker, name, people worked with, minutes, AI statement (dropdown) and description, other sources, unfinished work, the reflection (with a live word count, 200 to 250 words), honor statement, a submit checklist, and the submission code cell. The code cell moved from Simple Interest J9 to Submission Info B27. Templates 1.0.x no longer pass the version check.
 - The checker reads the Submission Info tab. Missing or wrong fields (and a reflection outside 200 to 250 words, or a typed name that differs from the file name) appear under "Things to fix" on the student page. They do not change the score.

@@ -4,11 +4,11 @@
   else root.Checker = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const VERSION = '1.4.0';          // checker release. Keep in sync with package.json and CHANGELOG.md
+  const VERSION = '1.5.3';          // checker release. Keep in sync with package.json and CHANGELOG.md
 
   // ===== INSTRUCTOR SETTINGS: edit this block each semester =====
   const CONFIG = {
-    templateVersion: '1.1.0',       // current student template. Only major.minor must match
+    templateVersion: '1.2.3',       // current student template. Only major.minor must match
     cover: {                          // the Submission Info tab (first tab of the template)
       sheet: 'Submission Info', name: 'B6', people: 'B7', minutes: 'B8', ai: 'B9', aiHow: 'B10', sources: 'B11', unfinished: 'B12',
       reflection: 'A16', signature: 'B22', date: 'B23', code: 'B27', reflectionWords: [200, 250]
@@ -18,21 +18,22 @@
     // Extra functions allowed only in specific places (template already uses SUM here)
     extraAllowed: {
       'Income Tax Estimator': { B13: ['SUM'], B28: ['SUM'] },
-      'Extra Credit - GPA Estimator': { '*': ['SUM'] }
+      'Extra Credit - Card Interest': { E35: ['SUM'], F35: ['SUM'] }
     },
     minInstructionChars: 40,        // text in A1:D2 beyond the word "Instructions:"
     tolerance: 1e-5,                // relative tolerance on numeric answers
     taxIncomes: [9000, 50400, 85000, 150000, 260000, 800000],
     // Bracket upper limits and rates come from the template (2026 tables, Rev. Proc. 2025-32)
     tax: {
-      'Single': { input: 'D3', rows: [5, 11], total: 'B13', eff: 'B14', logic: 'D4:G12',
+      'Single': { input: 'D3', rows: [5, 11], total: 'B13', eff: 'B14', logic: 'D4:J12',
         limits: [12400, 50400, 105700, 201775, 256225, 640600, Infinity] },
-      'Married Filing Jointly': { input: 'D18', rows: [20, 26], total: 'B28', eff: 'B29', logic: 'D19:G27',
+      'Married Filing Jointly': { input: 'D18', rows: [20, 26], total: 'B28', eff: 'B29', logic: 'D19:J27',
         limits: [24800, 100800, 211400, 403550, 512450, 768700, Infinity] }
     },
     rates: [0.10, 0.12, 0.22, 0.24, 0.32, 0.35, 0.37],
     minIfPerFiler: 7,
-    gradePoints: { A: 4, AB: 3.5, B: 3, BC: 2.5, C: 2, D: 1, F: 0 },
+    // Credit card interest tab (extra credit): inputs B5:B10, outputs B12:B14, daily table D5:F34 (30 days)
+    card: { logic: 'E5:E34', minIf: 30, days: 30, daysInYear: 365 },
     // Automated points. All-or-nothing: a category earns its points only if every check in it passes.
     // Reflection (10), scratchwork (10) and the upload question (1) are graded in Canvas, not here.
     points: {
@@ -55,9 +56,9 @@
 
   const SI = 'Simple Interest', CI = 'Compound Interest', CC = 'Continuous Compounded Interest',
     FV = 'Future Value', PV = 'Present Value', APY = 'APY Calculator',
-    TAX = 'Income Tax Estimator', GPA = 'Extra Credit - GPA Estimator';
+    TAX = 'Income Tax Estimator', CARD = 'Extra Credit - Card Interest';
   const REQUIRED = [SI, CI, CC, FV, PV, APY, TAX];
-  const OPTIONAL = [GPA];
+  const OPTIONAL = [CARD];
   const COVER = () => CONFIG.cover.sheet;
 
   function makeRng(seed) {
@@ -140,11 +141,31 @@
         add(TAX, name + ', income $' + inc.toLocaleString('en-US'), { [t.input]: inc }, outs);
       }
     }
-    // GPA (extra credit)
-    for (const set of [[[3, 'A'], [4, 'BC'], [2, 'F'], [3, 'AB'], [1, 'D']], [[4, 'B'], [3, 'C'], [3, 'A'], [2, 'A'], [3, 'AB']]]) {
-      const inputs = {}; let pts = 0, cr = 0;
-      set.forEach(([c, g], k) => { inputs['B' + (5 + k)] = c; inputs['C' + (5 + k)] = g; pts += c * CONFIG.gradePoints[g]; cr += c; });
-      add(GPA, 'GPA test', inputs, one('E11', pts / cr));
+    // Credit card interest, simple daily interest (extra credit). Five scenarios; every daily row is checked.
+    {
+      const N = CONFIG.card.days, Y = CONFIG.card.daysInYear;
+      const scenarios = [
+        { name: 'No purchase or payment', buy: false, pay: false },
+        { name: 'Purchase only', buy: true, pay: false },
+        { name: 'Payment only', buy: false, pay: true },
+        { name: 'Purchase, then payment', buy: true, pay: true, order: 'buyFirst' },
+        { name: 'Payment, then purchase', buy: true, pay: true, order: 'payFirst' }
+      ];
+      for (const s of scenarios) {
+        const bal = between(500, 5000, 100), apr = between(0.12, 0.30, 0.005);
+        let buyDay = between(2, 28, 1), payDay = between(2, 28, 1);
+        if (s.order === 'buyFirst' && buyDay >= payDay) { buyDay = between(2, 14, 1); payDay = between(16, 28, 1); }
+        if (s.order === 'payFirst' && payDay >= buyDay) { payDay = between(2, 14, 1); buyDay = between(16, 28, 1); }
+        const buy = s.buy ? between(100, 1500, 50) : 0, pay = s.pay ? between(100, Math.min(bal, 1000), 50) : 0;
+        const outs = []; let sumBal = 0, sumInt = 0;
+        for (let d = 1; d <= N; d++) {
+          const b = bal + (d >= buyDay ? buy : 0) - (d >= payDay ? pay : 0), i = b * apr / Y;
+          sumBal += b; sumInt += i;
+          outs.push({ cell: 'E' + (4 + d), expected: b }, { cell: 'F' + (4 + d), expected: i });
+        }
+        outs.push({ cell: 'B12', expected: sumInt }, { cell: 'B13', expected: sumBal / N }, { cell: 'B14', expected: bal + buy - pay + sumInt });
+        add(CARD, s.name, { B5: bal, B6: apr, B7: buy, B8: buyDay, B9: pay, B10: payDay }, outs);
+      }
     }
     return cases;
   }
@@ -321,6 +342,17 @@
     }
     if (present[APY]) { const f = formulaOf(APY, 'F1'); apyLogicOk = !!(f && /\bIF\s*\(/i.test(f)); item(lg, apyLogicOk, 'APY: F1 uses an IF statement', f ? '=' + f : 'F1 has no formula'); }
 
+    let cardLogicOk = true;
+    if (present[CARD]) {
+      const rg = XLSX.utils.decode_range(CONFIG.card.logic); let n = 0;
+      for (let r = rg.s.r; r <= rg.e.r; r++) for (let c = rg.s.c; c <= rg.e.c; c++) {
+        const f = formulaOf(CARD, XLSX.utils.encode_cell({ r, c }));
+        if (f && /\bIF\s*\(/i.test(f)) n++;
+      }
+      cardLogicOk = n >= CONFIG.card.minIf;
+      item(lg, cardLogicOk, 'Card Interest (extra credit): at least ' + CONFIG.card.minIf + ' IF formulas in ' + CONFIG.card.logic, n + ' found');
+    }
+
     // Dynamic tests
     const cases = buildCases(seed);
     const sheets = {};
@@ -362,7 +394,7 @@
       if (!present[name]) continue;
       const rs = results[name] || [], s = sec('Tests: ' + name + (OPTIONAL.includes(name) ? ' (extra credit)' : ''));
       for (const r of rs) item(s, r.fails.length === 0, r.label,
-        r.fails.length ? r.fails.join('; ') + '   [inputs: ' + Object.entries(r.inputs).map(([k, v]) => k + '=' + fmt(v)).join(', ') + ']' : '');
+        r.fails.length ? r.fails.slice(0, 6).join('; ') + (r.fails.length > 6 ? ' (+' + (r.fails.length - 6) + ' more)' : '') + '   [inputs: ' + Object.entries(r.inputs).map(([k, v]) => k + '=' + fmt(v)).join(', ') + ']' : '');
     }
 
     // Automated score (all-or-nothing per category)
@@ -376,7 +408,7 @@
       ...[SI, CI, CC, FV, PV].map((n) => ({ key: n, group: 'C', label: n + ' calculator', ok: passTab(n), max: P.calc[n] })),
       { key: TAX, group: 'T', label: 'Federal Income Tax Estimator', ok: passTab(TAX) && taxLogicOk, max: P.tax },
       { key: APY, group: 'A', label: 'APY Comparison Calculator', ok: passTab(APY) && apyLogicOk, max: P.apy },
-      { key: GPA, group: 'E', label: 'Extra credit: GPA Calculator', ok: passTab(GPA), max: P.ec, extra: true }
+      { key: CARD, group: 'E', label: 'Extra credit: Credit Card Interest', ok: passTab(CARD) && cardLogicOk, max: P.ec, extra: true }
     ];
     cats.forEach((c) => { c.earned = c.ok ? c.max : 0; });
     const sumOf = (list) => list.reduce((a, c) => a + c.earned, 0);

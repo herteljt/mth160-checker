@@ -21,9 +21,9 @@ Points are set in `CONFIG.points` in `checker.js`. A category earns its points o
 | Instructions on every tab | 7 | Written instructions present in A1:D2 on each required tab (quality is graded by hand) |
 | Required test values entered | 3 | The published test values are typed in the input cells of each required tab |
 | Each financial calculator | 8 x 5 | Every randomized test case passes, and answers are formulas, not typed numbers |
-| Federal Income Tax Estimator | 7 | All tests pass and each filer's logic area (D4:G12, D19:G27) holds at least 7 IF formulas |
+| Federal Income Tax Estimator | 7 | All tests pass and each filer's logic area (D4:J12, D19:J27) holds at least 7 IF formulas |
 | APY Comparison Calculator | 7 | All tests pass and F1 uses an IF statement |
-| Extra credit: GPA | 2 | All tests pass |
+| Extra credit: Credit Card Interest | 2 | All five randomized scenarios pass (outputs and every one of the 30 daily rows), answers are formulas, and each balance in E5:E34 uses an IF statement |
 
 The first tab of the template, Submission Info, holds the student's name, who they worked with, time spent, AI statement, reflection, honor statement, and the submission code. It is not part of the score and not fingerprinted: the checker lists missing fields under "Things to fix", and the grader shows them with the reflection. Instruction quality, scratchwork, and the reflection are graded by hand.
 
@@ -49,7 +49,7 @@ tax brackets and rates, test incomes, and the number of IF formulas required.
 If the template's cell layout changes, update the cell addresses in `buildCases` and `testValues`.
 
 ## Versioning
-Current release: **1.4.0** (see `CHANGELOG.md`). The checker shows its version and the expected template
+Current release: **1.5.3** (see `CHANGELOG.md`). The checker shows its version and the expected template
 version in the page header and in every report. A file built on a different MAJOR or MINOR template version
 fails the version check; PATCH differences are ignored.
 
